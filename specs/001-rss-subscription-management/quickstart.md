@@ -60,3 +60,11 @@ Open the frontend URL shown by the UI process. Confirm the API is listening at `
 ## Check Browser Networking
 
 Open the browser's Developer Tools, select **Network**, and use the subscription workflow. Confirm requests go to the configured local API, successful list/add requests complete, and no request is made to a submitted feed URL. Check the **Console** and **Network** views for CORS errors or failed API requests. If CORS errors appear, verify the frontend's actual origin, the API base URL, and the backend's allowed CORS origins and ports.
+
+## First-Time User Check (SC-003)
+
+Recruit five people who have not used the app. Without explaining the interface, ask each person to add one feed URL and confirm it appears in the list. Count a success only if the participant completes both actions without assistance. The criterion passes when at least four of five participants succeed. Record the date and result below.
+
+| Date | Participants | Completed without assistance | Result |
+|---|---:|---:|---|
+| Not run | 0 of 5 | Not measured | Pending human validation |

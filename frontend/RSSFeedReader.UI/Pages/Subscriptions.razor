@@ -1,0 +1,99 @@
+@page "/"
+@using RSSFeedReader.UI.Models
+@using RSSFeedReader.UI.Services
+@inject SubscriptionsClient SubscriptionsClient
+
+<PageTitle>Subscriptions</PageTitle>
+
+<h1>Subscriptions</h1>
+
+<form @onsubmit="AddSubscriptionAsync" @onsubmit:preventDefault aria-busy="@_isSubmitting">
+    <label for="subscription-url">Feed URL</label>
+    <input id="subscription-url"
+           type="text"
+           autocomplete="off"
+           @bind="_url"
+           aria-describedby="subscription-message" />
+    <button type="submit" disabled="@_isSubmitting">Add subscription</button>
+</form>
+
+@if (_message is not null)
+{
+    <p id="subscription-message" role="alert">@_message</p>
+}
+
+@if (_loadFailed)
+{
+    <p>No subscriptions are available until the API can be reached.</p>
+}
+else if (_subscriptions.Count == 0)
+{
+    <p>No subscriptions yet.</p>
+}
+else
+{
+    <ul>
+        @foreach (var subscription in _subscriptions)
+        {
+            <li>@subscription.Url</li>
+        }
+    </ul>
+}
+
+@code {
+    private readonly List<Subscription> _subscriptions = [];
+    private string _url = string.Empty;
+    private string? _message;
+    private bool _isSubmitting;
+    private bool _loadFailed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _subscriptions.AddRange(await SubscriptionsClient.GetAllAsync());
+        }
+        catch (HttpRequestException)
+        {
+            _loadFailed = true;
+            _message = "Unable to load subscriptions. Check that the API is running.";
+        }
+        catch (TaskCanceledException)
+        {
+            _loadFailed = true;
+            _message = "Unable to load subscriptions. Check that the API is running.";
+        }
+    }
+
+    private async Task AddSubscriptionAsync()
+    {
+        _message = null;
+
+        if (string.IsNullOrWhiteSpace(_url))
+        {
+            _message = "Please enter a feed URL.";
+            return;
+        }
+
+        _isSubmitting = true;
+
+        try
+        {
+            var added = await SubscriptionsClient.AddAsync(_url);
+            _subscriptions.Add(added);
+            _url = string.Empty;
+        }
+        catch (HttpRequestException)
+        {
+            _message = "The subscription could not be added. Check the API and try again.";
+        }
+        catch (TaskCanceledException)
+        {
+            _message = "The subscription could not be added. Check the API and try again.";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}
