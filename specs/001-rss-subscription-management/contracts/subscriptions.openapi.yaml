@@ -1,0 +1,118 @@
+openapi: 3.1.0
+info:
+  title: RSS Subscription API
+  version: 1.0.0
+  description: >
+    Minimal in-memory API for adding and listing subscriptions. Values are kept
+    unchanged, duplicates are allowed, and no feed is fetched or parsed.
+    CORS is deployment configuration; allowed origins are not part of this
+    API contract.
+paths:
+  /api/subscriptions:
+    get:
+      operationId: listSubscriptions
+      summary: List subscriptions
+      description: Returns subscriptions in submission order, including duplicates.
+      responses:
+        "200":
+          description: Subscriptions in submission order.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Subscription"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      operationId: addSubscription
+      summary: Add a subscription
+      description: >
+        Adds and returns the submitted URL unchanged. Accepts any nonblank
+        string; URL format, scheme, reachability, and feed contents are not
+        checked. Does not fetch or parse the feed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddSubscriptionRequest"
+      responses:
+        "200":
+          description: The subscription was added.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        "400":
+          description: The body is missing or malformed, or url is missing, empty, or whitespace-only.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "415":
+          description: The request content type is not supported.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+  schemas:
+    NonBlankString:
+      type: string
+      pattern: '\S'
+      description: Any string containing at least one non-whitespace character.
+    AddSubscriptionRequest:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          $ref: "#/components/schemas/NonBlankString"
+    Subscription:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          description: The submitted value, unchanged.
+      additionalProperties: false
+    ProblemDetails:
+      type: object
+      description: Error response following RFC 9457 Problem Details.
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        errors:
+          type: object
+          description: Optional validation errors keyed by request field.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      additionalProperties: true
+  responses:
+    InternalServerError:
+      description: An unexpected server error prevented the operation from completing.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
